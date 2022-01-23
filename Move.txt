@@ -1,0 +1,108 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+public class Move : MonoBehaviour
+{
+    #region Variable
+
+    private float VelocityL, VelocityR;
+    public Text MockUpTextL, MockUpTextR;
+    public float MockUpSpeedL, MockUpSpeedR, MinSwingL, MinSwingR, MaxSwingL, MaxSwingR;
+    public float SwingTimeL, SwingTimeR;
+    public bool UseMockUpL, UseMockUpR, SwingL, SwingR = false;
+    public Rigidbody WheelL, WheelR;
+    public WheelL WheelLScript;
+    public WheelR WheelRScript;
+    [HideInInspector]
+    public float DynamicMockUpSpeedL, DynamicMockUpSpeedR;
+
+    public GameObject CompleteLevelUI;
+    //public Test TestScriptL, TestScriptR;
+    #endregion
+
+    public void CompleteLevel()
+    {
+        CompleteLevelUI.SetActive(true);
+    }
+    // Start is called before the first frame update
+    void Start()
+    {
+        DynamicMockUpSpeedL = MockUpSpeedL;
+        DynamicMockUpSpeedR = MockUpSpeedR;
+        StartCoroutine(MockUpL());
+        StartCoroutine(MockUpR());
+    }
+    // Update is called once per frame
+    void Update()
+    {
+        Movement();
+    }
+    void Movement()
+    {
+        var LocalVL = WheelL.transform.InverseTransformDirection(WheelL.velocity);
+        var LocalVR = WheelR.transform.InverseTransformDirection(WheelR.velocity);
+        LocalVL.z = VelocityL;
+        LocalVR.z = VelocityR;
+        WheelL.velocity = WheelL.transform.TransformDirection(LocalVL);
+        WheelR.velocity = WheelR.transform.TransformDirection(LocalVR);
+        //WheelL.velocity = new Vector3(0, 0, VelocityL);
+        //WheelR.velocity = new Vector3(0, 0, VelocityR);
+        //WheelChair.velocity = new Vector3(0, 0, Velocity);
+    }
+
+    IEnumerator MockUpL()
+    {
+        while (true)
+        {
+            if (UseMockUpL)
+            {
+                VelocityL = DynamicMockUpSpeedL;
+            }
+            else
+            {
+                VelocityL = WheelLScript.WheelVelocity;
+                DynamicMockUpSpeedL = MockUpSpeedL;
+            }
+            string ActivateText = UseMockUpL ? " (Activated)" : " (Inactivated)";
+            MockUpTextL.text = "MockUpSpeedL: " + DynamicMockUpSpeedL.ToString() + ActivateText;
+            if (SwingL)
+            {
+                DynamicMockUpSpeedL = Random.Range(MockUpSpeedL + MinSwingL, MockUpSpeedL + MaxSwingL);
+                yield return new WaitForSeconds(SwingTimeL);
+            }
+            else
+            {
+                DynamicMockUpSpeedL = MockUpSpeedL;
+            }
+            yield return null;
+        }
+    }
+    IEnumerator MockUpR()
+    {
+        while (true)
+        {
+            if (UseMockUpR)
+            {
+                VelocityR = DynamicMockUpSpeedR;
+            }
+            else
+            {
+                VelocityR = WheelRScript.WheelVelocity;
+                DynamicMockUpSpeedR = MockUpSpeedR;
+            }
+            string ActivateText = UseMockUpR ? " (Activated)" : " (Inactivated)";
+            MockUpTextR.text = "MockUpSpeedR: " + DynamicMockUpSpeedR.ToString() + ActivateText;
+            if (SwingR)
+            {
+                DynamicMockUpSpeedR = Random.Range(MockUpSpeedR + MinSwingR, MockUpSpeedR + MaxSwingR);
+                yield return new WaitForSeconds(SwingTimeR);
+            }
+            else
+            {
+                DynamicMockUpSpeedR = MockUpSpeedR;
+            }
+            yield return null;
+        }
+    }
+}
