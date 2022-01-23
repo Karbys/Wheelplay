@@ -1,0 +1,105 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class TimerSystem : MonoBehaviour
+{
+    #region Variables
+    public TMP_Text TimerText;
+    public float MaxTime;
+    public CheckPointSystem CheckPointMainScript;
+    public float CurrentTime;
+    private string BestTime;
+    public bool EnableMilli = false;
+    public bool CountUp = false;
+    public bool AllowManualOverride = false;
+    [HideInInspector]
+    public bool TimerIsRunning = false;
+    #endregion
+
+    #region Unity Methods
+    void Start()
+    {
+        
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (AllowManualOverride)
+            ManualOverrideTimer();
+        if (TimerIsRunning)
+        {
+            if (CountUp)
+                CurrentTime += Time.deltaTime;
+            else
+                CurrentTime -= Time.deltaTime;
+            DisplayTime(CurrentTime);
+            if (CurrentTime <= 0)
+            {
+                CurrentTime = 0;
+                TimerText.text = "Time Up!!!";
+                CheckPointMainScript.Failed();
+                TimerIsRunning = false;
+            }
+        }
+        if (!TimerIsRunning && !CountUp)
+        {
+            CurrentTime = MaxTime;
+        }
+        if (!TimerIsRunning && CountUp)
+        {
+            CurrentTime = 0;
+        }
+    }
+    #endregion
+    #region Manual Override
+    void ManualOverrideTimer()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            if (TimerIsRunning)
+                TimerIsRunning = false;
+            else
+                TimerIsRunning = true;
+        }
+    }
+    #endregion
+    #region Object Trigger
+    public void ObjectTriggerTimer(bool value)
+    {
+        TimerIsRunning = value;
+
+    }
+    #endregion
+    #region Text Display
+    void DisplayTime(float CurrentTime)
+    {
+        /*
+        if (!EnableMilli)
+            CurrentTime++;
+            */
+        float DynamicTime = CurrentTime;
+        float minutes = Mathf.FloorToInt(DynamicTime / 60);
+        float seconds = Mathf.FloorToInt(DynamicTime % 60);
+        float milliSeconds;
+        if (EnableMilli)
+        {
+            milliSeconds = (DynamicTime % 1) * 100;
+            TimerText.text = string.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, milliSeconds);
+        }
+        else
+            TimerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        BestTime = TimerText.text;
+    }
+    public void TimeConclusion()
+    {
+        if (CountUp)
+            TimerText.text = "Time Used: " + BestTime;
+        else
+            TimerText.text = "Time Remaining: " + BestTime;    
+    }
+    #endregion
+}
