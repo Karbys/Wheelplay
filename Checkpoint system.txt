@@ -1,0 +1,119 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class CheckPointSystem : MonoBehaviour
+{
+    #region Variables
+    public TMP_Text TimerENDTxt;
+    public TMP_Text CheckPointText;
+    public TMP_Text SpeedAV;
+    public float AVGspeed;
+    private int CurrentCheckPoint = 0;
+    private int MaxCheckPoint;
+    public TimerSystem TimerScript;
+    public Material CheckPointUnpassedMaterial;
+    public bool AllowManualOverride = false;
+    public DistanceCal AVDistance; 
+    [HideInInspector]
+    public string NextCheckPoint;
+    [HideInInspector]
+    public bool PassedStartPoint = false;
+    #endregion
+
+    #region Unity Methods
+    void Start()
+    {
+        MaxCheckPoint = GameObject.FindGameObjectsWithTag("CheckPoint").Length + 1;
+    }
+    void Update()
+    {
+        if (AllowManualOverride)
+            ManualOverrideCheckPoint();
+    }
+    #endregion
+    #region Manual Override
+    void ManualOverrideCheckPoint()
+    {
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            CurrentCheckPoint = 0;
+            PassedStartPoint = false;
+            TimerScript.TimerIsRunning = false;
+            ResetCheckPoint();
+            TimerScript.TimerText.text = "";
+            CheckPointText.text = "";
+        }
+    }
+    #endregion
+    #region Pass Point
+    public void PassStartPoint()
+    {
+        if (!PassedStartPoint)
+        {
+            CurrentCheckPoint = 0;
+            PassedStartPoint = true;
+            TimerScript.ObjectTriggerTimer(true);
+            NextCheckPoint = "CheckPoint" + (CurrentCheckPoint + 1).ToString();
+            DisplayText();
+        }
+        else
+        {
+            if (CurrentCheckPoint == MaxCheckPoint - 1)
+            {
+                Finished();
+            }
+        }
+    }
+    public void PassCheckPoint()
+    {
+        CurrentCheckPoint++;
+        if (CurrentCheckPoint != MaxCheckPoint)
+            NextCheckPoint = "CheckPoint" + (CurrentCheckPoint + 1).ToString();
+        DisplayText();
+    }
+    #endregion
+    #region Results
+    void Finished()
+    {
+        float minutes = Mathf.FloorToInt(TimerScript.CurrentTime / 60);
+        float seconds = Mathf.FloorToInt(TimerScript.CurrentTime % 60);
+        float milliSeconds;
+        CurrentCheckPoint++;
+        TimerScript.ObjectTriggerTimer(false);
+        PassedStartPoint = false;
+        TimerScript.TimeConclusion();
+        PlayerPrefs.SetFloat("TimeUsed", TimerScript.CurrentTime);
+        TimerENDTxt.text = TimerScript.CurrentTime.ToString();
+        TimerENDTxt.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        AVGspeed = AVDistance.AVD / TimerScript.CurrentTime;
+        SpeedAV.text = AVGspeed.ToString() + "m/s";
+        ResetCheckPoint();
+        CheckPointText.text = "Finished!!!";
+    }
+    public void Failed()
+    {
+        CurrentCheckPoint = 0;
+        PassedStartPoint = false;
+        ResetCheckPoint();
+        CheckPointText.text = "Failed...";
+    }
+    #endregion
+    #region Reset Checkpoint
+    void ResetCheckPoint()
+    {
+        GameObject[] CheckPoints = GameObject.FindGameObjectsWithTag("CheckPoint");
+        foreach (GameObject CheckPoint in CheckPoints)
+        {
+            CheckPoint.GetComponent<MeshRenderer>().material = CheckPointUnpassedMaterial;
+        }
+    }
+    #endregion
+    #region Text Display
+    public void DisplayText()
+    {
+        CheckPointText.text = "Check Point: " + CurrentCheckPoint.ToString() + "/" + MaxCheckPoint.ToString();
+    }
+    #endregion
+}
