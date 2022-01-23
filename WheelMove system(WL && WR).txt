@@ -1,0 +1,164 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using System.IO.Ports;
+
+
+public class Test : MonoBehaviour
+{
+    #region Variable
+    public string PortName;
+    SerialPort sp = new SerialPort();
+    int IdleCounter = 0;
+    float Rad = 0;
+    float RPS = 0;
+    float RPM = 0;
+    float TimePassed = 0;
+    bool FirstZero = false;
+    public Text RPSText, TotalTimeText, MeterText, AverageText;
+    public float Angle;
+    public float Radius;
+    //public Rigidbody CubeRb;
+    //public int Multiplier;
+    bool Pass = false;
+    float TotalTime = 0;
+    bool NowAverage = false;
+    [HideInInspector]
+    public float WheelVelocity = 0;
+    #endregion
+    // Start is called before the first frame update
+    void Awake()
+    {
+        SerialPort sp = new SerialPort(PortName, 9600);
+    }
+    void Start()
+    {
+        sp.Open();
+        sp.ReadTimeout = 1;
+        StartCoroutine(Calculation());
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            if (!NowAverage)
+            {
+                StartCoroutine(AverageValue());
+                NowAverage = true;
+            }
+            else
+            {
+                Debug.LogWarning("Now Calculating. Please Wait");
+            }
+
+        }
+        if (sp.IsOpen)
+        {
+            string Raw = sp.ReadLine();
+            string[] Line = Raw.Split(',');
+            float detect = float.Parse(Line[1]);
+            Debug.Log("Detect: " + detect);
+
+            if (detect == 0 && !FirstZero)
+            {
+                if (!Pass)
+                {
+                    Debug.Log("Pass True");
+                    Pass = true;
+                }
+                else if (Pass)
+                {
+                    Debug.Log("Pass False");
+                    Pass = false;
+                }
+                FirstZero = true;
+                IdleCounter = 0;
+            }
+            if (detect == 1)
+            {
+                FirstZero = false;
+                IdleCounter++;
+            }
+        }
+    }
+
+    IEnumerator Calculation()
+    {
+        float StartTime = 0;
+        while (true)
+        {
+            if (!Pass)
+            {
+                Debug.Log("Enter2");
+                if (StartTime != 0)
+                {
+                    TotalTime = StartTime;
+                    StartTime = 0;
+                }
+            }
+            if (Pass)
+            {
+                Debug.Log("Enter1");
+                StartTime += Time.smoothDeltaTime;
+            }
+            if (IdleCounter >= 120)
+            {
+                TotalTime = 0;
+            }
+            if (TotalTime != 0)
+            {
+                Rad = Angle / TotalTime;  
+            }
+            if (TotalTime == 0)
+            {
+                Rad = 0;
+            }
+            TotalTimeText.text = "TotalTime: " + TotalTime;
+            RPS = Rad / 360;
+            RPM = RPS * 60;
+            WheelVelocity = RPS * Mathf.PI * 2 * Radius * (18 / 5);
+            MeterText.text = "Meter: " + WheelVelocity + " Km/Hr";
+            //Debug.Log("RPS: " + Rad);
+            RPSText.text = "RPS: " + RPS + " RPM:" + RPM;
+            //CubeRb.AddForce(0, 0, Rad * Multiplier);
+            //Counter = 0;
+            yield return null;
+        }
+    }
+
+    IEnumerator AverageValue()
+    {
+        int Counter = 0;
+        float AveragedRPM = 0f;
+        List<float> RPMList = new List<float>();
+        while (true)
+        {
+            if (RPMList.Count == 60)
+            {
+                foreach (float i in RPMList)
+                {
+                    AveragedRPM += i;
+                }
+                AveragedRPM /= RPMList.Count;
+                AverageText.text = "AverageRPM:" + AveragedRPM.ToString();
+                RPMList.Clear();
+                NowAverage = false;
+                break;
+            }
+            RPMList.Add(RPM);
+            Counter++;
+            AverageText.text = "AverageRPM: Calculating... (" + Counter.ToString() + ")";
+            yield return new WaitForSeconds(1);
+        }
+    }
+}
+
+/*
+RPS = Rad / 360
+Meter = (Rad / 360) * 2 * pi * r
+
+*/
