@@ -1,0 +1,46 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CheckPointObject : MonoBehaviour
+{
+    #region Variables
+    public CheckPointSystem CheckPointMainScript;
+    public Material CheckPointPassedMaterial;
+    private string ObjectName;
+    private string TagName;
+    #endregion
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+    void SelfCheck()
+    {
+        ObjectName = this.gameObject.name;
+        TagName = this.gameObject.tag;
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+            SelfCheck();
+            if (TagName == "StartPoint")
+            {
+                CheckPointMainScript.PassStartPoint();
+            }
+            if (ObjectName == CheckPointMainScript.NextCheckPoint && CheckPointMainScript.PassedStartPoint)
+            {
+                CheckPointMainScript.PassCheckPoint();
+                this.gameObject.GetComponent<MeshRenderer>().material = CheckPointPassedMaterial;
+            }
+        }
+    }
+
+}
